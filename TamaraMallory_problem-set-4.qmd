@@ -183,7 +183,7 @@ Create a new dataset that shows the average proportion of employed women (`work`
 # eitc_by_year_kids <- eitc |> whatever
 # print(eitc_by_year_kids)
 
-eitc_by_year_kids <- eitc_treatment_kids |> 
+eitc_by_year_kids <- eitc |> 
   group_by(year,any_kids) |> 
   summarize(avg_work = mean(work))
 print(eitc_by_year_kids)
@@ -211,7 +211,7 @@ Calculate the average proportion of employed women in the treatment and control 
 
 ```{r}
 # Calculate average of work across any_kids and after_1993
-eitc_treatment_kids |> 
+eitc_by_year_kids <- eitc |> 
   group_by(after_1993,any_kids) |> 
   summarize(avg_work = mean(work, na.rm = T))
 
@@ -268,7 +268,7 @@ Run a regression model to find the diff-in-diff estimate of the effect of the EI
 # Regression model here
 
 model_eitc_program <- lm(work ~ any_kids + after_1993 
-                         + any_kids *after_1993, data = eitc_treatment_kids)
+                         + any_kids *after_1993, data = eitc)
 
 tidy(model_eitc_program)
 
@@ -289,7 +289,7 @@ Run a new regression model with demographic controls. Eissa and Liebman used the
 # R tends to put interaction terms last in regression tables, so you might not
 # see the any_kids * after_1993 coefficient on the first page of the table here
 
-eitc_squared <- eitc_treatment_kids |> 
+eitc_squared <- eitc |> 
   mutate(age_squared = age^2,
          education_squared = unearn^2)
 print(eitc_squared)
@@ -341,7 +341,7 @@ To make sure this effect isn't driven by any pre-treatment trends, we can preten
 Create a new dataset that only includes data from 1991–1993 (hint: use `filter()`). Create a new binary before/after indicator named `after_1991` (hint: `year >= 1992`). Use regression to find the diff-in-diff estimate of the EITC on `work` (don't worry about adding demographic controls). 
 
 ```{r}
-eitc_fake_treatment <- eitc_treatment_kids |> 
+eitc_fake_treatment <- eitc |> 
   filter(year < 1994) |> 
   mutate(after_1991 = year >= 1992)
 # Make new dataset that only includes rows less than 1994 (with filter), and add

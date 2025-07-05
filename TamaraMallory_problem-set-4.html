@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Tamara Mallory">
+<meta name="dcterms.date" content="2025-03-13">
+
+<title>The EITC and diff-in-diff</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="TamaraMallory_problem-set-4_files/libs/clipboard/clipboard.min.js"></script>
+<script src="TamaraMallory_problem-set-4_files/libs/quarto-html/quarto.js"></script>
+<script src="TamaraMallory_problem-set-4_files/libs/quarto-html/popper.min.js"></script>
+<script src="TamaraMallory_problem-set-4_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="TamaraMallory_problem-set-4_files/libs/quarto-html/anchor.min.js"></script>
+<link href="TamaraMallory_problem-set-4_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="TamaraMallory_problem-set-4_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="TamaraMallory_problem-set-4_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="TamaraMallory_problem-set-4_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="TamaraMallory_problem-set-4_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#exploratory-data-analysis" id="toc-exploratory-data-analysis" class="nav-link active" data-scroll-target="#exploratory-data-analysis">1. Exploratory data analysis</a>
+  <ul class="collapse">
+  <li><a href="#work" id="toc-work" class="nav-link" data-scroll-target="#work">Work</a></li>
+  <li><a href="#family-income" id="toc-family-income" class="nav-link" data-scroll-target="#family-income">Family income</a></li>
+  <li><a href="#earnings" id="toc-earnings" class="nav-link" data-scroll-target="#earnings">Earnings</a></li>
+  <li><a href="#race" id="toc-race" class="nav-link" data-scroll-target="#race">Race</a></li>
+  <li><a href="#education" id="toc-education" class="nav-link" data-scroll-target="#education">Education</a></li>
+  <li><a href="#age" id="toc-age" class="nav-link" data-scroll-target="#age">Age</a></li>
+  <li><a href="#general-summary" id="toc-general-summary" class="nav-link" data-scroll-target="#general-summary">General summary</a></li>
+  </ul></li>
+  <li><a href="#create-treatment-variables" id="toc-create-treatment-variables" class="nav-link" data-scroll-target="#create-treatment-variables">2. Create treatment variables</a></li>
+  <li><a href="#check-pre--and-post-treatment-trends" id="toc-check-pre--and-post-treatment-trends" class="nav-link" data-scroll-target="#check-pre--and-post-treatment-trends">3. Check pre- and post-treatment trends</a></li>
+  <li><a href="#difference-in-difference-by-hand-ish" id="toc-difference-in-difference-by-hand-ish" class="nav-link" data-scroll-target="#difference-in-difference-by-hand-ish">4. Difference-in-difference by hand-ish</a></li>
+  <li><a href="#difference-in-difference-with-regression" id="toc-difference-in-difference-with-regression" class="nav-link" data-scroll-target="#difference-in-difference-with-regression">5. Difference-in-difference with regression</a></li>
+  <li><a href="#difference-in-difference-with-regression-and-controls" id="toc-difference-in-difference-with-regression-and-controls" class="nav-link" data-scroll-target="#difference-in-difference-with-regression-and-controls">6. Difference-in-difference with regression and controls</a></li>
+  <li><a href="#varying-treatment-effects" id="toc-varying-treatment-effects" class="nav-link" data-scroll-target="#varying-treatment-effects">7. Varying treatment effects</a></li>
+  <li><a href="#check-parallel-trends-with-fake-treatment" id="toc-check-parallel-trends-with-fake-treatment" class="nav-link" data-scroll-target="#check-parallel-trends-with-fake-treatment">8. Check parallel trends with fake treatment</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="TamaraMallory_problem-set-4.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li><li><a href="TamaraMallory_problem-set-4.docx"><i class="bi bi-file-word"></i>MS Word</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">The EITC and diff-in-diff</h1>
+<p class="subtitle lead">Problem set 4 — PMAP 8521, Spring 2025</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Tamara Mallory </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 13, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<hr>
+<p>In 1996, Nada Eissa and Jeffrey B. Liebman <a href="http://darp.lse.ac.uk/papersdb/Eissa-Liebman_(QJE96).pdf">published a now-classic study on the effect of the Earned Income Tax Credit (EITC) on employment</a>. The EITC is a special tax credit for low income workers that changes depending on (1) how much a family earns (the lowest earners and highest earners don’t receive a huge credit, as the amount received phases in and out), and (2) the number of children a family has (more kids = higher credit). See <a href="https://www.cbpp.org/research/federal-tax/policy-basics-the-earned-income-tax-credit">this brief explanation</a> for an interactive summary of how the EITC works.</p>
+<p>Eissa and Liebman’s study looked at the effects of the EITC on women’s employment and wages after it was initially substantially expanded in 1986. The credit was expanded substantially again in 1993. For this problem set, you’ll measure the causal effect of this 1993 expansion on the employment levels and annual income for women.</p>
+<p>A family must have children in order to quality for the EITC, which means the presence of 1 or more kids in a family assigns low-income families to the EITC program (or “treatment”). We have annual data on earnings from 1991–1996, and because the expansion of EITC occurred in 1993, we also have data both before and after the expansion. This treatment/control before/after situation allows us to use a difference-in-differences approach to identify the causal effect of the EITC.</p>
+<p>The dataset I’ve provided (<code>eitc.dta</code>) is a Stata data file containing more than 13,000 observations. This is non-experimental data—the data comes from the US Census’s Current Population Survey (CPS) and includes all women in the CPS sample between the ages of 20–54 with less than a high school education between 1991–1996. There are 11 variables:</p>
+<ul>
+<li><code>state</code>: The woman’s state of residence. The numbers are Census/CPS state numbers: <a href="http://unionstats.gsu.edu/State_Code.htm">http://unionstats.gsu.edu/State_Code.htm</a></li>
+<li><code>year</code>: The tax year</li>
+<li><code>urate</code>: The unemployment rate in the woman’s state of residence</li>
+<li><code>children</code>: The number of children the woman has</li>
+<li><code>nonwhite</code>: Binary variable indicating if the woman is not white (1 = Hispanic/Black)</li>
+<li><code>finc</code>: The woman’s family income in 1997 dollars</li>
+<li><code>earn</code>: The woman’s personal income in 1997 dollars</li>
+<li><code>age</code>: The woman’s age</li>
+<li><code>ed</code>: The number of years of education the woman has</li>
+<li><code>unearn</code>: The woman’s family income minus her personal income, in <em>thousands</em> of 1997 dollars</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)  <span class="co"># For ggplot, mutate, filter, group_by, and friends</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)      <span class="co"># For loading data from Stata</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)      <span class="co"># For showing models as data frames</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># This turns off this message that appears whenever you use summarize():</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># `summarise()` ungrouping output (override with `.groups` argument)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">dplyr.summarise.inform =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Load EITC data</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>eitc <span class="ot">&lt;-</span> <span class="fu">read_stata</span>(<span class="st">"data/eitc.dta"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># case_when() is a fancy version of ifelse() that takes multiple conditions</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># and outcomes. Here, we make a new variable named children_cat(egorical) </span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># with three different levels: 0, 1, and 2+</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">children_cat =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    children <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"0"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    children <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"1"</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    children <span class="sc">&gt;=</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"2+"</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="exploratory-data-analysis" class="level1">
+<h1>1. Exploratory data analysis</h1>
+<p>Create a new variable that shows if women have 0 children, 1 child, or 2+ children (I did this for you already above).</p>
+<p>What is the average of <code>work</code>, <code>finc</code>, <code>earn</code>, <code>nonwhite</code>, <code>ed</code>, and <code>age</code> across each of these different levels of children? How are these groups different? Describe your findings in a paragraph.</p>
+<section id="work" class="level2">
+<h2 class="anchored" data-anchor-id="work">Work</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Work</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_work =</span> <span class="fu">mean</span>(work))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_work
+  &lt;chr&gt;           &lt;dbl&gt;
+1 0               0.574
+2 1               0.538
+3 2+              0.421</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># stat_summary() here is a little different from the geom_*() layers you've seen</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># in the past. stat_summary() takes a function (here mean_se()) and runs it on</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># each of the children_cat groups to get the average and standard error. It then</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># plots those with geom_pointrange. The fun.args part of this lets us pass an</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># argument to mean_se() so that we can multiply the standard error by 1.96,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># giving us the 95% confidence interval</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> work)) <span class="sc">+</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="family-income" class="level2">
+<h2 class="anchored" data-anchor-id="family-income">Family income</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_finc =</span> <span class="fu">mean</span>(finc))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_finc
+  &lt;chr&gt;           &lt;dbl&gt;
+1 0              18560.
+2 1              13942.
+3 2+             11985.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> finc)) <span class="sc">+</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="earnings" class="level2">
+<h2 class="anchored" data-anchor-id="earnings">Earnings</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_earn =</span> <span class="fu">mean</span>(earn))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_earn
+  &lt;chr&gt;           &lt;dbl&gt;
+1 0              13760.
+2 1               9928.
+3 2+              6614.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> earn)) <span class="sc">+</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="race" class="level2">
+<h2 class="anchored" data-anchor-id="race">Race</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_race =</span> <span class="fu">mean</span>(nonwhite))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_race
+  &lt;chr&gt;           &lt;dbl&gt;
+1 0               0.516
+2 1               0.596
+3 2+              0.709</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> nonwhite)) <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="education" class="level2">
+<h2 class="anchored" data-anchor-id="education">Education</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_education =</span> <span class="fu">mean</span>(ed))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_education
+  &lt;chr&gt;                &lt;dbl&gt;
+1 0                     8.55
+2 1                     8.99
+3 2+                    9.01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> ed)) <span class="sc">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="age" class="level2">
+<h2 class="anchored" data-anchor-id="age">Age</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>eitc <span class="sc">|&gt;</span> </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(children_cat) <span class="sc">|&gt;</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_age =</span> <span class="fu">mean</span>(age))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 2
+  children_cat avg_age
+  &lt;chr&gt;          &lt;dbl&gt;
+1 0               38.5
+2 1               33.8
+3 2+              32.0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc, <span class="fu">aes</span>(<span class="at">x =</span> children_cat, <span class="at">y =</span> age)) <span class="sc">+</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">geom =</span> <span class="st">"pointrange"</span>, <span class="at">fun.data =</span> <span class="st">"mean_se"</span>, <span class="at">fun.args =</span> <span class="fu">list</span>(<span class="at">mult =</span> <span class="fl">1.96</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="general-summary" class="level2">
+<h2 class="anchored" data-anchor-id="general-summary">General summary</h2>
+<p><strong>Describe your findings in a paragraph. How do these women differ depending on the number of kids they have?</strong> The women differ depending on the number of kids that they have. For average of women that were employed had 0 kids and as women had kids the less likely they were employed. Concerning family income, Women who had no kids had the highest family income and the women who had one kid had less family income and the income lessened more with 2+ kids. As the number of kids increased, the earned income for the women decreased. As the average of nonwhite women increase so did the number if kids the women had. As education increased, the number of kids woman had increased. As women aged the less amount of kids they had. At the age of 32 women had 2+ kids while at the age around 34 had 1 kid and the around the age of 39 had 0 kids.</p>
+<p>What is the average of <code>work</code>, <code>finc</code>, <code>earn</code>, <code>nonwhite</code>, <code>ed</code>, and <code>age</code> across each of these different levels of children? How are these groups different? Describe your findings in a paragraph.</p>
+</section>
+</section>
+<section id="create-treatment-variables" class="level1">
+<h1>2. Create treatment variables</h1>
+<p>Create a new variable for treatment named <code>any_kids</code> (should be TRUE or 1 if <code>children</code> &gt; 0) and a variable for the timing named <code>after_1993</code> (should be TRUE or 1 if <code>year</code> &gt; 1993).</p>
+<p>Remember you can use the following syntax for creating a new binary variable based on a test:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>new_dataset <span class="ot">&lt;-</span> original_dataset <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">new_variable =</span> some_column <span class="sc">&gt;</span> some_number)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make new dataset here. You can either do something like:</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># eitc_new &lt;- eitc |&gt; whatever</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># which would create a completely new data frame, or do something like:</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># eitc &lt;- eitc |&gt; whatever</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co"># which would overwrite the original eitc data frame with the modified one. </span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Either approach is fine.</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>eitc <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">any_kids =</span> children <span class="sc">&gt;=</span> <span class="dv">1</span>,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">after_1993 =</span> year <span class="sc">&gt;</span> <span class="dv">1993</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="check-pre--and-post-treatment-trends" class="level1">
+<h1>3. Check pre- and post-treatment trends</h1>
+<p>Create a new dataset that shows the average proportion of employed women (<code>work</code>) for every year in both the treatment and control groups (i.e.&nbsp;both with and without kids). (Hint: use <code>group_by()</code> and <code>summarize()</code>, and group by both <code>year</code> and <code>any_kids</code>.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find average of work across year and any_kids</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Store this as a new object and then print it, like so:</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># eitc_by_year_kids &lt;- eitc |&gt; whatever</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># print(eitc_by_year_kids)</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>eitc_by_year_kids <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year,any_kids) <span class="sc">|&gt;</span> </span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_work =</span> <span class="fu">mean</span>(work))</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(eitc_by_year_kids)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 3
+# Groups:   year [6]
+    year any_kids avg_work
+   &lt;dbl&gt; &lt;lgl&gt;       &lt;dbl&gt;
+ 1  1991 FALSE       0.583
+ 2  1991 TRUE        0.460
+ 3  1992 FALSE       0.572
+ 4  1992 TRUE        0.439
+ 5  1993 FALSE       0.571
+ 6  1993 TRUE        0.438
+ 7  1994 FALSE       0.591
+ 8  1994 TRUE        0.464
+ 9  1995 FALSE       0.574
+10  1995 TRUE        0.508
+11  1996 FALSE       0.552
+12  1996 TRUE        0.503</code></pre>
+</div>
+</div>
+<p>Plot these trends using colored lines and points, with year on the x-axis, average employment on the y-axis. Add a vertical line at 1994 (hint: use <code>geom_vline(xintercept = SOMETHING)</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add plot here, with x = year, y = average employment, and color = any_kids.</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Add a vertical line too.</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(eitc_by_year_kids, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span>avg_work, <span class="at">color =</span> any_kids ) )<span class="sc">+</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_line</span>()<span class="sc">+</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">1994</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"black"</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="TamaraMallory_problem-set-4_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Do the pre-treatment trends appear to be similar?</strong> The pre-treatment trends appear to be similar according to the parallel trend assumption. Both displayed similar trends of decreasing then stabilizing then increasing up until 1994. After 1994 the treatment group continued increasing while the control group decreased.</p>
+</section>
+<section id="difference-in-difference-by-hand-ish" class="level1">
+<h1>4. Difference-in-difference by hand-ish</h1>
+<p>Calculate the average proportion of employed women in the treatment and control groups before and after the EITC expansion. (Hint: group by <code>any_kids</code> and <code>after_1993</code> and find the average of <code>work</code>.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate average of work across any_kids and after_1993</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>eitc_by_year_kids <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(after_1993,any_kids) <span class="sc">|&gt;</span> </span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_work =</span> <span class="fu">mean</span>(work, <span class="at">na.rm =</span> T))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Calculate the difference-in-difference estimate given these numbers. (Recall from class that each cell has a letter (A, B, C, and D), an d that the diff-in-diff estimate represents a special combination of these cells.)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># It might be helpful to pull these different cells out with filter() and pull()</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># like in the in-class examples from 8. Store these as objects like cell_A,</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># cell_B, etc. and do the math here (like cell_B - cell_A, etc.)</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>eitc_diff_diff_means <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(any_kids, after_1993) <span class="sc">|&gt;</span> </span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">avg_work =</span> <span class="fu">mean</span>(work))</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>cell_A <span class="ot">&lt;-</span> eitc_diff_diff_means <span class="sc">|&gt;</span> </span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(any_kids <span class="sc">==</span> <span class="cn">FALSE</span>, after_1993 <span class="sc">==</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(avg_work)</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>cell_B <span class="ot">&lt;-</span> eitc_diff_diff_means <span class="sc">|&gt;</span> </span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(any_kids <span class="sc">==</span> <span class="cn">FALSE</span>, after_1993 <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(avg_work)</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>cell_C <span class="ot">&lt;-</span> eitc_diff_diff_means <span class="sc">|&gt;</span> </span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(any_kids <span class="sc">==</span> <span class="cn">TRUE</span>, after_1993 <span class="sc">==</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(avg_work)</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>cell_D <span class="ot">&lt;-</span> eitc_diff_diff_means <span class="sc">|&gt;</span> </span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(any_kids <span class="sc">==</span> <span class="cn">TRUE</span>, after_1993 <span class="sc">==</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(avg_work)</span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>diff_in_diff <span class="ot">&lt;-</span> (cell_D <span class="sc">-</span> cell_C) <span class="sc">-</span> (cell_B <span class="sc">-</span> cell_A)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Before 1993</th>
+<th>After 1993</th>
+<th>Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Women with no kids</td>
+<td>0.576</td>
+<td>0.573</td>
+<td>-0.002</td>
+</tr>
+<tr class="even">
+<td>Women with kids</td>
+<td>0.446</td>
+<td>0.491</td>
+<td>0.045</td>
+</tr>
+<tr class="odd">
+<td>Difference</td>
+<td></td>
+<td></td>
+<td>0.047</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What is the difference-in-difference estimate? Discuss the result.</strong> (Hint, these numbers are percents, so you can multiply them by 100 to make it easier to interpret. For instance, if the diff-in-diff number is 0.15 (it’s not), you could say that the EITC caused the the proportion of mothers in the workplace to increase 15 percentage points.)</p>
+<p>The EITC caused the proportion of mothers in the workplace to increase by 4.7%.</p>
+</section>
+<section id="difference-in-difference-with-regression" class="level1">
+<h1>5. Difference-in-difference with regression</h1>
+<p>Run a regression model to find the diff-in-diff estimate of the effect of the EITC on employment (<code>work</code>) (hint: remember that you’ll be using an interaction term).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression model here</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>model_eitc_program <span class="ot">&lt;-</span> <span class="fu">lm</span>(work <span class="sc">~</span> any_kids <span class="sc">+</span> after_1993 </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>                         <span class="sc">+</span> any_kids <span class="sc">*</span>after_1993, <span class="at">data =</span> eitc)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(model_eitc_program)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 5
+  term                        estimate std.error statistic  p.value
+  &lt;chr&gt;                          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)                  0.575     0.00885    65.1   0       
+2 any_kidsTRUE                -0.129     0.0117    -11.1   1.84e-28
+3 after_1993TRUE              -0.00207   0.0129     -0.160 8.73e- 1
+4 any_kidsTRUE:after_1993TRUE  0.0469    0.0172      2.73  6.31e- 3</code></pre>
+</div>
+</div>
+<p><strong>How does this value compare with what you found in part 4 earlier? What is the advantage of doing this instead of making a 2x2 table?</strong> The value is the same compared to what was found earlier in part 4.The advantage of doing a regression than a 2x2 table is because a regression can include control variables to help isolate the effect and also can tell if a variable is statistically significantly.</p>
+</section>
+<section id="difference-in-difference-with-regression-and-controls" class="level1">
+<h1>6. Difference-in-difference with regression and controls</h1>
+<p>Run a new regression model with demographic controls. Eissa and Liebman used the following in their original study: non-labor income (family income minus personal earnings, or the <code>unearn</code> column), number of children, race, age, age squared, education, and education squared. You’ll need to make new variables for age squared and education squared. (These are squared because higher values of age and education might have a greater effect: someone with 4 years of education would have 16 squared years, while someone with 8 years (twice as much) would have 64 squared years (way more than twice as much).)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make new dataset with columns for age squared and education squared</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression model with demographic controls here</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># R tends to put interaction terms last in regression tables, so you might not</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co"># see the any_kids * after_1993 coefficient on the first page of the table here</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>eitc_squared <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age_squared =</span> age<span class="sc">^</span><span class="dv">2</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">education_squared =</span> unearn<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(eitc_squared)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 13,746 × 16
+   state  year urate children nonwhite   finc   earn   age    ed  work unearn
+   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+ 1    11  1991  7.60        0        1 18714. 18714.    26    10     1  0    
+ 2    12  1991  7.20        1        0  4839.   471.    22     9     1  4.37 
+ 3    13  1991  6.40        2        0  8178.     0     33    11     0  8.18 
+ 4    14  1991  9.10        0        1  9370.     0     43    11     0  9.37 
+ 5    15  1991  8.60        3        1 14707. 14707.    23     7     1  0    
+ 6    16  1991  6.80        1        0 21605. 18855.    53     7     1  2.75 
+ 7    21  1991  7.30        0        1 19147. 14141.    52    11     1  5.01 
+ 8    22  1991  6.70        0        1 64312. 63803.    51    11     1  0.509
+ 9    23  1991  7           1        1 17676. 17676.    20    11     1  0    
+10    31  1991  6.40        2        1 12214.  2358.    32    11     1  9.86 
+# ℹ 13,736 more rows
+# ℹ 5 more variables: children_cat &lt;chr&gt;, any_kids &lt;lgl&gt;, after_1993 &lt;lgl&gt;,
+#   age_squared &lt;dbl&gt;, education_squared &lt;dbl&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>model_squared <span class="ot">&lt;-</span> <span class="fu">lm</span>(work <span class="sc">~</span> unearn <span class="sc">+</span> any_kids<span class="sc">*</span>after_1993 <span class="sc">+</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>                      nonwhite <span class="sc">+</span> age <span class="sc">+</span> age_squared <span class="sc">+</span> ed <span class="sc">+</span> education_squared, <span class="at">data =</span> eitc_squared)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(model_squared)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 5
+   term                         estimate std.error statistic   p.value
+   &lt;chr&gt;                           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+ 1 (Intercept)                  0.105    0.0572         1.83 6.75e-  2
+ 2 unearn                      -0.0348   0.000880     -39.6  0        
+ 3 any_kidsTRUE                -0.108    0.0115        -9.45 3.97e- 21
+ 4 after_1993TRUE              -0.0131   0.0121        -1.08 2.81e-  1
+ 5 nonwhite                    -0.0803   0.00829       -9.69 4.04e- 22
+ 6 age                          0.0276   0.00319        8.66 5.31e- 18
+ 7 age_squared                 -0.000332 0.0000438     -7.58 3.72e- 14
+ 8 ed                           0.0139   0.00155        9.01 2.28e- 19
+ 9 education_squared            0.000363 0.0000149     24.4  6.85e-129
+10 any_kidsTRUE:after_1993TRUE  0.0611   0.0161         3.79 1.49e-  4</code></pre>
+</div>
+</div>
+<p><strong>Does the treatment effect change? Interpret these findings.</strong> After controlling for the demographics.the diff-and diff estimate is larger in this model than it was in the model_eitc_program model .</p>
+</section>
+<section id="varying-treatment-effects" class="level1">
+<h1>7. Varying treatment effects</h1>
+<p>Make two new binary indicator variables showing if the woman has one child or not and two children or not. Name them <code>one_kid</code> and <code>two_plus_kids</code> (hint: use <code>mutate(BLAH = children == SOMETHING)</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make new dataset with one_kid and two_plus_kids indicator variables</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>eitc_counting_kids <span class="ot">&lt;-</span> eitc_squared <span class="sc">|&gt;</span> </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">one_kid =</span> children <span class="sc">==</span> <span class="dv">1</span>,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">two_plus_kids =</span> children <span class="sc">&gt;=</span> <span class="dv">2</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(eitc_counting_kids)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 13,746 × 18
+   state  year urate children nonwhite   finc   earn   age    ed  work unearn
+   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+ 1    11  1991  7.60        0        1 18714. 18714.    26    10     1  0    
+ 2    12  1991  7.20        1        0  4839.   471.    22     9     1  4.37 
+ 3    13  1991  6.40        2        0  8178.     0     33    11     0  8.18 
+ 4    14  1991  9.10        0        1  9370.     0     43    11     0  9.37 
+ 5    15  1991  8.60        3        1 14707. 14707.    23     7     1  0    
+ 6    16  1991  6.80        1        0 21605. 18855.    53     7     1  2.75 
+ 7    21  1991  7.30        0        1 19147. 14141.    52    11     1  5.01 
+ 8    22  1991  6.70        0        1 64312. 63803.    51    11     1  0.509
+ 9    23  1991  7           1        1 17676. 17676.    20    11     1  0    
+10    31  1991  6.40        2        1 12214.  2358.    32    11     1  9.86 
+# ℹ 13,736 more rows
+# ℹ 7 more variables: children_cat &lt;chr&gt;, any_kids &lt;lgl&gt;, after_1993 &lt;lgl&gt;,
+#   age_squared &lt;dbl&gt;, education_squared &lt;dbl&gt;, one_kid &lt;lgl&gt;,
+#   two_plus_kids &lt;lgl&gt;</code></pre>
+</div>
+</div>
+<p>Rerun the regression model from part 6 (i.e.&nbsp;with all the demographic controls), but remove the <code>any_kids</code> and <code>any_kids * after_1993</code> terms and replace them with two new interaction terms: <code>one_kid * after_1993</code> and <code>two_plus_kids * after_1993</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run regression with both of the new interaction terms instead of </span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co"># any_kids * after_1993</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>model_new_terms <span class="ot">&lt;-</span> <span class="fu">lm</span>(work <span class="sc">~</span> unearn <span class="sc">+</span> one_kid<span class="sc">*</span>after_1993 <span class="sc">+</span> </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>                      two_plus_kids<span class="sc">*</span>after_1993 <span class="sc">+</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>                    nonwhite <span class="sc">+</span> age <span class="sc">+</span> age_squared <span class="sc">+</span> ed <span class="sc">+</span> education_squared, <span class="at">data =</span> eitc_counting_kids)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(model_new_terms)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 5
+   term                              estimate std.error statistic   p.value
+   &lt;chr&gt;                                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+ 1 (Intercept)                       0.0677   0.0574         1.18 2.39e-  1
+ 2 unearn                           -0.0342   0.000884     -38.7  1.50e-311
+ 3 one_kidTRUE                      -0.0619   0.0143        -4.32 1.55e-  5
+ 4 after_1993TRUE                   -0.0131   0.0121        -1.08 2.80e-  1
+ 5 two_plus_kidsTRUE                -0.144    0.0130       -11.1  2.69e- 28
+ 6 nonwhite                         -0.0750   0.00832       -9.02 2.11e- 19
+ 7 age                               0.0298   0.00320        9.30 1.56e- 20
+ 8 age_squared                      -0.000365 0.0000440     -8.29 1.23e- 16
+ 9 ed                                0.0141   0.00154        9.13 7.84e- 20
+10 education_squared                 0.000356 0.0000149     23.9  5.47e-124
+11 one_kidTRUE:after_1993TRUE        0.0472   0.0208         2.27 2.32e-  2
+12 after_1993TRUE:two_plus_kidsTRUE  0.0694   0.0182         3.82 1.35e-  4</code></pre>
+</div>
+</div>
+<p><strong>For which group of women is the EITC treatment the strongest for (i.e.&nbsp;which group sees the greatest change in employment)? Why do you think that is?</strong> The women with 2+ kids had the greatest change in employment. I believe that this group of women had the greatest change in employment because mothers had more financial incentives to seek employment and were already employed because of financial responsibilities for the kids.</p>
+</section>
+<section id="check-parallel-trends-with-fake-treatment" class="level1">
+<h1>8. Check parallel trends with fake treatment</h1>
+<p>To make sure this effect isn’t driven by any pre-treatment trends, we can pretend that the EITC was expanded in 1991 (starting in 1992) instead of 1993.</p>
+<p>Create a new dataset that only includes data from 1991–1993 (hint: use <code>filter()</code>). Create a new binary before/after indicator named <code>after_1991</code> (hint: <code>year &gt;= 1992</code>). Use regression to find the diff-in-diff estimate of the EITC on <code>work</code> (don’t worry about adding demographic controls).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>eitc_fake_treatment <span class="ot">&lt;-</span> eitc <span class="sc">|&gt;</span> </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&lt;</span> <span class="dv">1994</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">after_1991 =</span> year <span class="sc">&gt;=</span> <span class="dv">1992</span>)</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Make new dataset that only includes rows less than 1994 (with filter), and add</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="co"># a new binary indicator variable for after_1991</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Run simple regression with interaction term any_kids * after_1991</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>model_simple <span class="ot">&lt;-</span> <span class="fu">lm</span>(work <span class="sc">~</span> any_kids<span class="sc">*</span>after_1991, </span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> eitc_fake_treatment)</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(model_simple)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 5
+  term                        estimate std.error statistic   p.value
+  &lt;chr&gt;                          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)                   0.583     0.0149    39.1   1.34e-304
+2 any_kidsTRUE                 -0.123     0.0196    -6.26  4.02e- 10
+3 after_1991TRUE               -0.0117    0.0185    -0.631 5.28e-  1
+4 any_kidsTRUE:after_1991TRUE  -0.0101    0.0244    -0.415 6.78e-  1</code></pre>
+</div>
+</div>
+<p><strong>Is there a significant diff-in-diff effect? What does this mean for pre-treatment trends?</strong> There is not a significant diff-in-diff effect in this regression model. This means that the pre-treatment trends were not parallel or that the policy had no true effect.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
